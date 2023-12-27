@@ -2,6 +2,7 @@ from math import sqrt
 import random as rand
 import numpy as np
 import torch
+from neural_network import CellNeuralNetwork
 
 from params import *
 from utils import *
@@ -13,6 +14,25 @@ FORCES_BY_DECISION = [0, np.pi/4, np.pi/2, 3*np.pi/4, np.pi, 5*np.pi/4, 3*np.pi/
 class Simulation:
     def __init__(self, n_cells, cell_size):
         self.cells = [Cell(cell_size) for _ in range(n_cells)]
+
+    def load_from(filename, n_cells, cell_size):
+        with open(filename) as f:
+            lines = f.readlines()
+            cells = []
+            for line in lines:
+                values = line.split(",")
+                position = np.array([float(values[0]), float(values[1])])
+                size = float(values[2])
+                speed = np.array([float(values[3]), float(values[4])])
+                lifespan = float(values[5])
+                neural_network = None
+                if (len(values) > 6 and len(values[6].strip()) > 0):
+                    neural_network = CellNeuralNetwork().cuda()
+                    neural_network.load_state_dict(torch.load(values[6].strip()))
+                cells.append(Cell.get_from(position, size, speed, lifespan, neural_network))
+        s = Simulation(n_cells, cell_size)
+        s.cells = cells
+        return s
 
     def run_simulation(self, n_steps):
         #Initialize graphics
@@ -26,7 +46,7 @@ class Simulation:
             n_created += self.step(i)
             graphics.update(self.cells)
             if (i%3000==0):
-                print(f"Step {i} - {len(self.cells)} cells - {n_created} created")
+                print(f"Step {i} - {len(self.cells)} cells, of which {len([c for c in self.cells if c.lifespan>0])} alive - {n_created} created")
                 n_created = 0
             i += 1
         #Close graphics
@@ -55,7 +75,7 @@ class Simulation:
                 if (decision == 0):
                     continue
                 elif (decision == 9):
-                    if (cell.size >= 5):
+                    if (cell.size >= 6):
                         rand_dir = np.random.normal(size=2)
                         new_cell = Cell.get_from(cell.position - (rand_dir * cell.size * 0.6), cell.size/2, (cell.speed-rand_dir)/2, cell_lifespan, cell.neural_network.get_copy())
                         self.cells.append(new_cell)
@@ -111,14 +131,12 @@ class Simulation:
                     dead_cells.remove(dead_cell)
                     self.cells.remove(dead_cell)
             elif (total_mass < min_mass):
-                #Create a new cell
+                #Create a new dead cell
                 while(total_mass < min_mass):
-                    new_cell = Cell()
+                    new_cell = Cell.get_from(np.array([rand.randint(0,chess_size), rand.randint(0,chess_size)]), 10, np.array([0, 0]), 0)
                     total_mass += (new_cell.size**2 * 3.14)
                     self.cells.append(new_cell)
-        return created_cells
-                    
-        
+        return created_cells    
                 
     def check_collisions(self):
         #Create matrix of quadrants
@@ -216,3 +234,11 @@ class Simulation:
         map = torch.nn.functional.interpolate(map.reshape(1, 1, chess_size, chess_size), size=(view_size, view_size), mode='nearest')
         map = map.reshape(view_size, view_size, 1)
         return map
+    
+    def save_state(self, name):
+        with open(f"saved_state/{name}.txt", "w") as f:
+            for index, cell in enumerate(self.cells):
+                fn = f"saved_state/neural_weights/{name}_{index}.txt"
+                if (cell.export_parameters(fn)==False):
+                    fn = ""
+                f.write(f"{cell.position[0]},{cell.position[1]},{cell.size},{cell.speed[0]},{cell.speed[1]},{cell.lifespan},{fn}\n")

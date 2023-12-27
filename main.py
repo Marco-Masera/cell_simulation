@@ -1,36 +1,52 @@
 from math import sqrt
+import os
 import random as rand
 import numpy as np
 import torch
 import time
-
+import signal
+import argparse
 
 from params import *
 from utils import *
+import sys
 from simulation import Simulation
 
-
-from neural_network import CellNeuralNetwork 
-def run_test():
-    network = CellNeuralNetwork().cuda()       
-    for _ in range(20):
-        #Random input on 1 and 0, where probability of 1 is 0.1
-        input = torch.rand(1, 6, 400, 400).cuda()
-        input = torch.where(input > 0.9, torch.ones_like(input), torch.zeros_like(input))
-        input = input.reshape(1, cell_memory*2, view_size, view_size)
-        decisions = network(input, 0.2, 0.6)
-        #Chose max index in decisions 
-        decision = torch.argmax(decisions).item()
-        print(decisions)
-        print(decision)
+simulation = None
+simulation_name = ""
+save_state = False
+visualize = False
 
 
+def signal_handler(sig, frame):
+    if (save_state):
+        print("Saving state...")
+        simulation.save_state(simulation_name)
+    sys.exit(0)
+signal.signal(signal.SIGINT, signal_handler)
 
 def main():
-    #run_test()
-    #exit()
+    #Add command line arguments:
+    # -n : name of the simulation - string
+    # -s : save state of the simulation - bool
+    # -v : save information for rendering - bool
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n", "--name", help="Name of the simulation", default="default")
+    parser.add_argument("-s", "--save", help="Save state of the simulation", action="store_true")
+    parser.add_argument("-v", "--visualize", help="Save information for rendering", action="store_true")
+    args = parser.parse_args()
+    
+    global simulation_name, save_state, visualize, simulation
+    simulation_name = args.name
+    save_state = args.save
+    visualize = args.visualize
+    
     start_time = time.time()
-    simulation = Simulation(n_cells=n_cells, cell_size=start_cell_size)
+    if (save_state==False or not os.path.exists(f"saved_state/{simulation_name}.txt")):
+        simulation = Simulation(n_cells=n_cells, cell_size=start_cell_size)
+    else:
+        print("Loading state...")
+        simulation = Simulation.load_from(f"saved_state/{simulation_name}.txt", n_cells=n_cells, cell_size=start_cell_size)
     simulation.run_simulation(sim_steps)
     print(measures)
     print(f"Total time: {time.time() - start_time}")

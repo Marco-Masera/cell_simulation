@@ -29,6 +29,12 @@ class Cell:
         self.neural_network = neural_network
         return self 
     
+    def export_parameters(self, filename):
+        if (self.neural_network):
+            self.neural_network.export(filename)
+            return True
+        return False
+    
     def revitalize(self):
         self.lifespan = cell_lifespan
         self.memory = None

@@ -47,3 +47,7 @@ class CellNeuralNetwork(nn.Module):
         #Apply random change to the weights
         n.random_change()
         return n
+    
+    def export(self, filename):
+        torch.save(self.state_dict(), filename)
+        
