@@ -1,0 +1,17 @@
+chess_size = 1000
+view_size = 400
+friction = 0.98
+cell_lifespan = 220
+cell_memory = 3
+quadrant_size = 10
+update_cells_memory_every = 6
+run_network_every = 12
+n_cells = 24
+min_n_cells = 5
+start_cell_size = 30
+max_cell_size = 100
+max_mass = n_cells * (start_cell_size**2 * 3.13) * 2.5
+min_mass =  n_cells * (start_cell_size**2 * 3.13)
+sim_steps = -1
+network_changing_rate = 0.03
+cell_speed = 45
