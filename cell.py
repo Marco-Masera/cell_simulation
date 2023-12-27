@@ -72,12 +72,12 @@ class Cell:
         if (self.size < 1):
             return None
         r_new = sqrt(
-                        self.size**2 - (self.size - 1)**2
+                        self.size**2 - (self.size - 0.75)**2
                     )
         
         angle_coords = np.array([np.cos(direction), np.sin(direction)])
         self.speed = self.speed + (angle_coords * cell_speed / sqrt(self.size**2))
-        self.size -= 1
+        self.size -= 0.75
         return Cell.get_from(self.position - (angle_coords * (self.size+1+r_new)), r_new, -angle_coords*5, 0)
     
     def export_memory(self):

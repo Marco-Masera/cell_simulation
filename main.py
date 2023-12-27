@@ -47,7 +47,7 @@ def main():
     else:
         print("Loading state...")
         simulation = Simulation.load_from(f"saved_state/{simulation_name}.txt", n_cells=n_cells, cell_size=start_cell_size)
-    simulation.run_simulation(sim_steps)
+    simulation.run_simulation(sim_steps, visualize=visualize, simulation_name=simulation_name)
     print(measures)
     print(f"Total time: {time.time() - start_time}")
 

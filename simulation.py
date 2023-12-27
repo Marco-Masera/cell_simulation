@@ -34,13 +34,15 @@ class Simulation:
         s.cells = cells
         return s
 
-    def run_simulation(self, n_steps):
+    def run_simulation(self, n_steps, visualize=False, simulation_name="default"):
         #Initialize graphics
         graphics = Graphics()
         graphics.initialize(chess_size, chess_size)
+        #Open file to log state at each iteration
+        if (visualize==True):
+            f = open(f"rendering/{simulation_name}.txt", "a")
         #Run simulation
         i = 0
-        f = self.cells[0]
         n_created = 0
         while(i < n_steps or n_steps == -1):
             n_created += self.step(i)
@@ -48,8 +50,14 @@ class Simulation:
             if (i%3000==0):
                 print(f"Step {i} - {len(self.cells)} cells, of which {len([c for c in self.cells if c.lifespan>0])} alive - {n_created} created")
                 n_created = 0
+            if (visualize==True):
+                f.write(f"\n{i}\n")
+                for cell in self.cells:
+                    f.write(f"{cell.position[0]},{cell.position[1]},{cell.size},{cell.lifespan}\n")
             i += 1
         #Close graphics
+        if (visualize==True):
+            f.close()
         graphics.close()
     
     def step(self, iteration):
@@ -133,7 +141,7 @@ class Simulation:
             elif (total_mass < min_mass):
                 #Create a new dead cell
                 while(total_mass < min_mass):
-                    new_cell = Cell.get_from(np.array([rand.randint(0,chess_size), rand.randint(0,chess_size)]), 10, np.array([0, 0]), 0)
+                    new_cell = Cell.get_from(np.array([rand.randint(0,chess_size), rand.randint(0,chess_size)]), 7, np.array([0, 0]), 0)
                     total_mass += (new_cell.size**2 * 3.14)
                     self.cells.append(new_cell)
         return created_cells    
